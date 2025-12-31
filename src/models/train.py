@@ -5,7 +5,10 @@ from pathlib import Path
 import mlflow
 import optuna
 import yaml
+from catboost import CatBoostClassifier
+from lightgbm import LGBMClassifier
 from sklearn.linear_model import LogisticRegression
+from xgboost import XGBClassifier
 from sklearn.metrics import (
     accuracy_score,
     f1_score,
@@ -76,6 +79,12 @@ def create_optuna_objective(
         # Create model
         if model_name == "logistic_regression":
             model = LogisticRegression(**params)
+        elif model_name == "xgboost":
+            model = XGBClassifier(**params)
+        elif model_name == "lightgbm":
+            model = LGBMClassifier(**params)
+        elif model_name == "catboost":
+            model = CatBoostClassifier(**params)
         else:
             raise ValueError(f"Unknown model: {model_name}")
 
@@ -124,6 +133,12 @@ def train_model(
 
     if model_name == "logistic_regression":
         final_model = LogisticRegression(**best_params)
+    elif model_name == "xgboost":
+        final_model = XGBClassifier(**best_params)
+    elif model_name == "lightgbm":
+        final_model = LGBMClassifier(**best_params)
+    elif model_name == "catboost":
+        final_model = CatBoostClassifier(**best_params)
     else:
         raise ValueError(f"Unknown model: {model_name}")
 
@@ -202,7 +217,7 @@ if __name__ == "__main__":
         "--model",
         type=str,
         default="logistic_regression",
-        choices=["logistic_regression"],
+        choices=["logistic_regression", "xgboost", "lightgbm", "catboost"],
         help="Model to train",
     )
     args = parser.parse_args()
