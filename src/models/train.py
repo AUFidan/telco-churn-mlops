@@ -3,6 +3,7 @@
 from pathlib import Path
 
 import mlflow
+from mlflow.tracking import MlflowClient
 import optuna
 import yaml
 from catboost import CatBoostClassifier
@@ -238,7 +239,44 @@ def train_ensemble(
     return stacking_model, all_best_params, metrics
 
 
-def run_training(model_name: str = "logistic_regression"):
+def register_model(
+    run_id: str,
+    model_name: str,
+    stage: str | None = None,
+) -> str:
+    """
+    Register a model to MLflow Model Registry.
+
+    Args:
+        run_id: MLflow run ID containing the model
+        model_name: Name to register the model under
+        stage: Optional stage to transition to ("Staging" or "Production")
+
+    Returns:
+        Model version number
+    """
+    client = MlflowClient()
+
+    # Register model
+    model_uri = f"runs:/{run_id}/model"
+    result = mlflow.register_model(model_uri, model_name)
+    version = result.version
+
+    logger.info(f"Registered model '{model_name}' version {version}")
+
+    # Transition to stage if specified
+    if stage:
+        client.transition_model_version_stage(
+            name=model_name,
+            version=version,
+            stage=stage,
+        )
+        logger.info(f"Transitioned model to stage: {stage}")
+
+    return version
+
+
+def run_training(model_name: str = "logistic_regression", register: bool = False):
     """Run full training pipeline for a model."""
     config = load_config()
 
@@ -304,9 +342,15 @@ def run_training(model_name: str = "logistic_regression"):
         # Log model
         mlflow.sklearn.log_model(model, artifact_path="model")
 
-        logger.info(f"Run completed. Run ID: {mlflow.active_run().info.run_id}")
+        run_id = mlflow.active_run().info.run_id
+        logger.info(f"Run completed. Run ID: {run_id}")
 
-    return model, metrics
+    # Register model if requested
+    if register:
+        registry_name = f"telco-churn-{model_name}"
+        register_model(run_id=run_id, model_name=registry_name, stage="Staging")
+
+    return model, metrics, run_id
 
 
 if __name__ == "__main__":
@@ -320,6 +364,11 @@ if __name__ == "__main__":
         choices=["logistic_regression", "xgboost", "lightgbm", "catboost", "ensemble"],
         help="Model to train",
     )
+    parser.add_argument(
+        "--register",
+        action="store_true",
+        help="Register model to MLflow Model Registry",
+    )
     args = parser.parse_args()
 
-    run_training(model_name=args.model)
+    run_training(model_name=args.model, register=args.register)
