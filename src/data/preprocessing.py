@@ -102,7 +102,7 @@ def split_data(
     df: pd.DataFrame,
     target_col: str = "Churn",
     test_size: float = 0.2,
-    random_state: int = 42,
+    random_state: int = 4141,
 ) -> tuple[pd.DataFrame, pd.DataFrame, pd.Series, pd.Series]:
     """Split data into train and test sets."""
     logger.info(f"Splitting data with test_size={test_size}")
@@ -121,7 +121,7 @@ def split_data(
 def preprocess_pipeline(
     raw_data_path: Path | str = "data/raw/telco_churn.csv",
     test_size: float = 0.2,
-    random_state: int = 42,
+    random_state: int = 4141,
 ) -> dict:
     """
     Run full preprocessing pipeline.
