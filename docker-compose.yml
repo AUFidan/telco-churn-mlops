@@ -72,6 +72,23 @@ services:
       --backend-store-uri postgresql://mlflow:mlflow@postgres:5432/mlflow
       --default-artifact-root s3://mlflow/
 
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    container_name: churn-api
+    depends_on:
+      - mlflow
+    environment:
+      MLFLOW_TRACKING_URI: http://mlflow:5000
+      MODEL_NAME: telco-churn-ensemble
+      MODEL_STAGE: Staging
+      AWS_ACCESS_KEY_ID: minioadmin
+      AWS_SECRET_ACCESS_KEY: minioadmin
+      MLFLOW_S3_ENDPOINT_URL: http://minio:9000
+    ports:
+      - "8000:8000"
+
 volumes:
   postgres_data:
   minio_data:
