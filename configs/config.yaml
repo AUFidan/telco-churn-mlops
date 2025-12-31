@@ -1,0 +1,109 @@
+data:
+  raw_path: "data/raw/telco_churn.csv"
+  processed_path: "data/processed"
+  test_size: 0.2
+  random_state: 4141
+
+mlflow:
+  tracking_uri: "http://localhost:5000"
+  experiment_name: "telco-churn"
+
+optuna:
+  n_trials: 50
+  cv_folds: 5
+  scoring: "roc_auc"
+  direction: "maximize"
+
+models:
+  logistic_regression:
+    search_space:
+      C:
+        type: "categorical"
+        choices: [0.001, 0.01, 0.1, 1.0, 10.0]
+      solver:
+        type: "categorical"
+        choices: ["lbfgs", "liblinear"]
+    fixed:
+      max_iter: 1000
+      random_state: 4141
+
+  xgboost:
+    search_space:
+      n_estimators:
+        type: "int"
+        low: 50
+        high: 300
+      max_depth:
+        type: "int"
+        low: 3
+        high: 10
+      learning_rate:
+        type: "float"
+        low: 0.01
+        high: 0.3
+        log: true
+      subsample:
+        type: "float"
+        low: 0.6
+        high: 1.0
+      colsample_bytree:
+        type: "float"
+        low: 0.6
+        high: 1.0
+    fixed:
+      random_state: 4141
+      eval_metric: "logloss"
+
+  lightgbm:
+    search_space:
+      n_estimators:
+        type: "int"
+        low: 50
+        high: 300
+      max_depth:
+        type: "int"
+        low: 3
+        high: 10
+      learning_rate:
+        type: "float"
+        low: 0.01
+        high: 0.3
+        log: true
+      num_leaves:
+        type: "int"
+        low: 20
+        high: 100
+      subsample:
+        type: "float"
+        low: 0.6
+        high: 1.0
+    fixed:
+      random_state: 4141
+      verbose: -1
+
+  catboost:
+    search_space:
+      iterations:
+        type: "int"
+        low: 50
+        high: 300
+      depth:
+        type: "int"
+        low: 3
+        high: 10
+      learning_rate:
+        type: "float"
+        low: 0.01
+        high: 0.3
+        log: true
+    fixed:
+      random_state: 4141
+      verbose: false
+
+  ensemble:
+    method: "stacking"
+    cv: 5
+    final_estimator:
+      type: "logistic_regression"
+      params:
+        random_state: 4141
