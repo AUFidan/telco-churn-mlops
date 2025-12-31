@@ -16,6 +16,7 @@ from sklearn.metrics import (
     recall_score,
     roc_auc_score,
 )
+from sklearn.ensemble import StackingClassifier
 from sklearn.model_selection import cross_val_score
 
 from src.data.preprocessing import preprocess_pipeline
@@ -151,6 +152,92 @@ def train_model(
     return final_model, best_params, metrics, study
 
 
+def create_model(model_name: str, params: dict):
+    """Create a model instance with given parameters."""
+    if model_name == "logistic_regression":
+        return LogisticRegression(**params)
+    elif model_name == "xgboost":
+        return XGBClassifier(**params)
+    elif model_name == "lightgbm":
+        return LGBMClassifier(**params)
+    elif model_name == "catboost":
+        return CatBoostClassifier(**params)
+    else:
+        raise ValueError(f"Unknown model: {model_name}")
+
+
+def train_ensemble(
+    config: dict,
+    X_train,
+    y_train,
+    X_test,
+    y_test,
+) -> tuple:
+    """Train ensemble model using StackingClassifier with tuned base models."""
+    logger.info("Training ensemble with StackingClassifier")
+
+    ensemble_config = config["models"]["ensemble"]
+    optuna_config = config["optuna"]
+
+    # Base model names (exclude logistic_regression as it's the meta-learner)
+    base_model_names = ["xgboost", "lightgbm", "catboost"]
+
+    # Train each base model with Optuna to get best params
+    base_estimators = []
+    all_best_params = {}
+
+    for model_name in base_model_names:
+        logger.info(f"Tuning {model_name} for ensemble...")
+        model_config = config["models"][model_name]
+
+        study = optuna.create_study(direction=optuna_config["direction"])
+        objective = create_optuna_objective(
+            model_name=model_name,
+            model_config=model_config,
+            X_train=X_train,
+            y_train=y_train,
+            cv_folds=optuna_config["cv_folds"],
+            scoring=optuna_config["scoring"],
+        )
+        study.optimize(
+            objective,
+            n_trials=optuna_config["n_trials"] // 3,  # Fewer trials per model
+            show_progress_bar=True,
+        )
+
+        best_params = {**study.best_trial.params, **model_config.get("fixed", {})}
+        all_best_params[model_name] = best_params
+
+        base_model = create_model(model_name, best_params)
+        base_estimators.append((model_name, base_model))
+
+        logger.info(f"{model_name} best CV score: {study.best_trial.value:.4f}")
+
+    # Create meta-learner (final estimator)
+    final_estimator_config = ensemble_config["final_estimator"]
+    final_estimator = LogisticRegression(
+        **final_estimator_config.get("params", {"random_state": 4141})
+    )
+
+    # Create and train StackingClassifier
+    stacking_model = StackingClassifier(
+        estimators=base_estimators,
+        final_estimator=final_estimator,
+        cv=ensemble_config["cv"],
+        stack_method="predict_proba",
+        n_jobs=-1,
+    )
+
+    logger.info("Fitting StackingClassifier...")
+    stacking_model.fit(X_train, y_train)
+
+    # Evaluate
+    metrics = evaluate_model(stacking_model, X_test, y_test)
+    logger.info(f"Ensemble test metrics: {metrics}")
+
+    return stacking_model, all_best_params, metrics
+
+
 def run_training(model_name: str = "logistic_regression"):
     """Run full training pipeline for a model."""
     config = load_config()
@@ -185,18 +272,31 @@ def run_training(model_name: str = "logistic_regression"):
             }
         )
 
-        # Train
-        model, best_params, metrics, study = train_model(
-            model_name=model_name,
-            config=config,
-            X_train=X_train,
-            y_train=y_train,
-            X_test=X_test,
-            y_test=y_test,
-        )
-
-        # Log best hyperparameters
-        mlflow.log_params({f"best_{k}": v for k, v in best_params.items()})
+        if model_name == "ensemble":
+            # Train ensemble
+            model, all_best_params, metrics = train_ensemble(
+                config=config,
+                X_train=X_train,
+                y_train=y_train,
+                X_test=X_test,
+                y_test=y_test,
+            )
+            # Log best params for each base model
+            for base_name, params in all_best_params.items():
+                for k, v in params.items():
+                    mlflow.log_param(f"{base_name}_{k}", v)
+        else:
+            # Train single model
+            model, best_params, metrics, study = train_model(
+                model_name=model_name,
+                config=config,
+                X_train=X_train,
+                y_train=y_train,
+                X_test=X_test,
+                y_test=y_test,
+            )
+            # Log best hyperparameters
+            mlflow.log_params({f"best_{k}": v for k, v in best_params.items()})
 
         # Log metrics
         mlflow.log_metrics(metrics)
@@ -217,7 +317,7 @@ if __name__ == "__main__":
         "--model",
         type=str,
         default="logistic_regression",
-        choices=["logistic_regression", "xgboost", "lightgbm", "catboost"],
+        choices=["logistic_regression", "xgboost", "lightgbm", "catboost", "ensemble"],
         help="Model to train",
     )
     args = parser.parse_args()
