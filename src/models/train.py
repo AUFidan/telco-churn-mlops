@@ -46,6 +46,13 @@ def evaluate_model(model, X_test, y_test) -> dict:
     }
 
 
+def compute_scale_pos_weight(y):
+    """Compute scale_pos_weight for XGBoost (ratio of negative to positive)."""
+    neg_count = (y == 0).sum()
+    pos_count = (y == 1).sum()
+    return neg_count / pos_count
+
+
 def create_optuna_objective(
     model_name: str,
     model_config: dict,
@@ -77,6 +84,10 @@ def create_optuna_objective(
 
         # Add fixed params
         params.update(model_config.get("fixed", {}))
+
+        # Add scale_pos_weight for XGBoost (balanced class weights)
+        if model_name == "xgboost":
+            params["scale_pos_weight"] = compute_scale_pos_weight(y_train)
 
         # Create model
         if model_name == "logistic_regression":
@@ -132,6 +143,10 @@ def train_model(
 
     # Train final model with best params
     best_params = {**study.best_trial.params, **model_config.get("fixed", {})}
+
+    # Add scale_pos_weight for XGBoost
+    if model_name == "xgboost":
+        best_params["scale_pos_weight"] = compute_scale_pos_weight(y_train)
 
     if model_name == "logistic_regression":
         final_model = LogisticRegression(**best_params)
@@ -207,6 +222,11 @@ def train_ensemble(
         )
 
         best_params = {**study.best_trial.params, **model_config.get("fixed", {})}
+
+        # Add scale_pos_weight for XGBoost
+        if model_name == "xgboost":
+            best_params["scale_pos_weight"] = compute_scale_pos_weight(y_train)
+
         all_best_params[model_name] = best_params
 
         base_model = create_model(model_name, best_params)
