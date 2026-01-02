@@ -1,6 +1,7 @@
 """FastAPI model serving API."""
 
 import os
+from contextlib import asynccontextmanager
 
 import mlflow
 import pandas as pd
@@ -11,14 +12,23 @@ from src.utils.logger import get_logger
 
 logger = get_logger(__name__)
 
+# Global model variable
+model = None
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Lifespan context manager for startup and shutdown events."""
+    load_model()
+    yield
+
+
 app = FastAPI(
     title="Telco Churn Prediction API",
     description="API for predicting customer churn",
     version="1.0.0",
+    lifespan=lifespan,
 )
-
-# Global model variable
-model = None
 
 
 class CustomerFeatures(BaseModel):
@@ -121,12 +131,6 @@ def load_model():
             model = None
 
     return model
-
-
-@app.on_event("startup")
-async def startup_event():
-    """Load model on startup."""
-    load_model()
 
 
 @app.get("/health", response_model=HealthResponse)
