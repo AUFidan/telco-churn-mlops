@@ -262,7 +262,7 @@ def train_ensemble(
 def register_model(
     run_id: str,
     model_name: str,
-    stage: str | None = None,
+    alias: str | None = None,
 ) -> str:
     """
     Register a model to MLflow Model Registry.
@@ -270,7 +270,7 @@ def register_model(
     Args:
         run_id: MLflow run ID containing the model
         model_name: Name to register the model under
-        stage: Optional stage to transition to ("Staging" or "Production")
+        alias: Optional alias to set (e.g., "champion", "staging")
 
     Returns:
         Model version number
@@ -284,14 +284,14 @@ def register_model(
 
     logger.info(f"Registered model '{model_name}' version {version}")
 
-    # Transition to stage if specified
-    if stage:
-        client.transition_model_version_stage(
+    # Set alias if specified
+    if alias:
+        client.set_registered_model_alias(
             name=model_name,
+            alias=alias,
             version=version,
-            stage=stage,
         )
-        logger.info(f"Transitioned model to stage: {stage}")
+        logger.info(f"Set model alias: {alias}")
 
     return version
 
@@ -368,7 +368,7 @@ def run_training(model_name: str = "logistic_regression", register: bool = False
     # Register model if requested
     if register:
         registry_name = f"telco-churn-{model_name}"
-        register_model(run_id=run_id, model_name=registry_name, stage="Staging")
+        register_model(run_id=run_id, model_name=registry_name, alias="staging")
 
     return model, metrics, run_id
 

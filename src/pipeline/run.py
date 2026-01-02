@@ -132,7 +132,7 @@ def run_pipeline(
         register_model(
             run_id=best_info["run_id"],
             model_name=registry_name,
-            stage="Staging",
+            alias="staging",
         )
         logger.info(f"Registered {best_name} to registry as {registry_name}")
 

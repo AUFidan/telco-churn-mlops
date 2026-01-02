@@ -110,7 +110,7 @@ def load_model():
     # Try to load from environment variable or default
     model_uri = os.getenv("MODEL_URI", None)
     model_name = os.getenv("MODEL_NAME", "telco-churn-ensemble")
-    model_stage = os.getenv("MODEL_STAGE", "Staging")
+    model_alias = os.getenv("MODEL_ALIAS", "staging")
 
     mlflow_uri = os.getenv("MLFLOW_TRACKING_URI", "http://localhost:5000")
     mlflow.set_tracking_uri(mlflow_uri)
@@ -120,9 +120,9 @@ def load_model():
         logger.info(f"Loading model from URI: {model_uri}")
         model = mlflow.sklearn.load_model(model_uri)
     else:
-        # Load from model registry
+        # Load from model registry using alias
         try:
-            registry_uri = f"models:/{model_name}/{model_stage}"
+            registry_uri = f"models:/{model_name}@{model_alias}"
             logger.info(f"Loading model from registry: {registry_uri}")
             model = mlflow.sklearn.load_model(registry_uri)
         except Exception as e:
