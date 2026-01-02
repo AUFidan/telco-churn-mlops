@@ -55,7 +55,7 @@ def train_all_models(models: list[str]) -> dict[str, dict]:
             logger.info(f"Metrics: {metrics}")
 
         except Exception as e:
-            logger.error(f"Failed to train {model_name}: {e}")
+            logger.error(f"Failed to train {model_name}: {e}", exc_info=True)
             results[model_name] = {
                 "metrics": None,
                 "run_id": None,

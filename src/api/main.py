@@ -126,7 +126,7 @@ def load_model():
             logger.info(f"Loading model from registry: {registry_uri}")
             model = mlflow.sklearn.load_model(registry_uri)
         except Exception as e:
-            logger.warning(f"Could not load from registry: {e}")
+            logger.warning(f"Could not load from registry: {e}", exc_info=True)
             logger.info("Model will need to be loaded manually")
             model = None
 
