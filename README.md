@@ -63,9 +63,28 @@ cd Project-1
 uv venv
 source .venv/bin/activate
 uv sync --all-extras
+```
 
-# Pull data from DVC
-dvc pull
+### Download Dataset
+
+The project uses the [Telco Customer Churn dataset](https://www.kaggle.com/datasets/blastchar/telco-customer-churn) from Kaggle.
+
+**Option 1: Manual Download**
+1. Download from [Kaggle](https://www.kaggle.com/datasets/blastchar/telco-customer-churn)
+2. Extract and rename the file to `data/raw/telco_churn.csv`
+
+**Option 2: Kaggle CLI**
+```bash
+# Install Kaggle CLI (if not already installed)
+pip install kaggle
+
+# Set up credentials: download kaggle.json from https://www.kaggle.com/settings
+# and place it at ~/.kaggle/kaggle.json
+chmod 600 ~/.kaggle/kaggle.json
+
+# Download and extract dataset
+kaggle datasets download -d blastchar/telco-customer-churn -p data/raw/ --unzip
+mv data/raw/WA_Fn-UseC_-Telco-Customer-Churn.csv data/raw/telco_churn.csv
 ```
 
 ### Start Infrastructure
