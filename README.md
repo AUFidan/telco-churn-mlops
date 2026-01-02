@@ -36,6 +36,7 @@ Project-1/
 │   ├── api/              # FastAPI serving
 │   ├── data/             # Data preprocessing
 │   ├── models/           # Training scripts
+│   ├── pipeline/         # Pipeline orchestration
 │   └── utils/            # Utilities (logging)
 ├── tests/                # Unit tests
 ├── docker-compose.yml    # Infrastructure
@@ -92,6 +93,29 @@ uv run python -m src.models.train --model xgboost --register
 uv run python -m src.models.train --model ensemble --register
 ```
 
+### Run Full Pipeline
+
+Train all models, compare metrics, and select the best one:
+
+```bash
+# Train all models and compare
+uv run python -m src.pipeline.run
+
+# Skip ensemble (faster)
+uv run python -m src.pipeline.run --skip-ensemble
+
+# Register best model to MLflow
+uv run python -m src.pipeline.run --register
+
+# Use different primary metric
+uv run python -m src.pipeline.run --primary-metric f1
+```
+
+Pipeline outputs:
+- ASCII comparison table in console
+- Bar chart at `artifacts/plots/model_comparison.png`
+- Comparison artifacts logged to MLflow
+
 ### Run API
 
 ```bash
@@ -133,7 +157,7 @@ curl -X POST http://localhost:8000/predict \
     "PaperlessBilling": 1,
     "PaymentMethod": 2,
     "MonthlyCharges": 0.2,
-    "TotalCharges": -0.1
+    "TotalCharges": 0.15
   }'
 ```
 

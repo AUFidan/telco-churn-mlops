@@ -73,7 +73,7 @@ class CustomerFeatures(BaseModel):
         "PaperlessBilling": 1,
         "PaymentMethod": 2,
         "MonthlyCharges": 0.2,
-        "TotalCharges": -0.1,
+        "TotalCharges": 0.15,
     }}}
 
 
