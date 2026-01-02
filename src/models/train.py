@@ -50,6 +50,8 @@ def compute_scale_pos_weight(y):
     """Compute scale_pos_weight for XGBoost (ratio of negative to positive)."""
     neg_count = (y == 0).sum()
     pos_count = (y == 1).sum()
+    if pos_count == 0:
+        raise ValueError("No positive samples found in target variable")
     return neg_count / pos_count
 
 
