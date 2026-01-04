@@ -1,6 +1,9 @@
 """Tests for data preprocessing module."""
 
+from pathlib import Path
+
 import pandas as pd
+import pytest
 
 from src.data.preprocessing import (
     clean_data,
@@ -10,15 +13,19 @@ from src.data.preprocessing import (
     split_data,
 )
 
+DATA_FILE = Path("data/raw/telco_churn.csv")
+
 
 class TestLoadRawData:
     """Tests for load_raw_data function."""
 
+    @pytest.mark.skipif(not DATA_FILE.exists(), reason="Data file not available")
     def test_load_raw_data_returns_dataframe(self):
         """Test that load_raw_data returns a DataFrame."""
         df = load_raw_data()
         assert isinstance(df, pd.DataFrame)
 
+    @pytest.mark.skipif(not DATA_FILE.exists(), reason="Data file not available")
     def test_load_raw_data_has_expected_columns(self):
         """Test that loaded data has expected columns."""
         df = load_raw_data()
