@@ -11,6 +11,8 @@ from src.pipeline.comparison import select_best_model
 from src.pipeline.visualization import (
     create_metric_table,
     create_metrics_comparison_chart,
+    create_pr_curve,
+    create_lift_gain_chart,
 )
 from src.utils.logger import get_logger
 
@@ -37,7 +39,7 @@ def train_all_models(models: list[str]) -> dict[str, dict]:
         start_time = time.time()
 
         try:
-            model, metrics, run_id = run_training(
+            model, metrics, run_id, predictions = run_training(
                 model_name=model_name,
                 register=False,
             )
@@ -49,6 +51,7 @@ def train_all_models(models: list[str]) -> dict[str, dict]:
                 "run_id": run_id,
                 "training_time": training_time,
                 "status": "success",
+                "predictions": predictions,
             }
 
             logger.info(f"Completed {model_name} in {training_time:.1f}s")
@@ -62,6 +65,7 @@ def train_all_models(models: list[str]) -> dict[str, dict]:
                 "training_time": time.time() - start_time,
                 "status": "failed",
                 "error": str(e),
+                "predictions": None,
             }
 
     return results
@@ -69,7 +73,7 @@ def train_all_models(models: list[str]) -> dict[str, dict]:
 
 def run_pipeline(
     models: list[str] | None = None,
-    primary_metric: str = "recall",
+    primary_metric: str = "pr_auc",
     register_best: bool = False,
     skip_ensemble: bool = False,
     output_dir: Path = Path("artifacts"),
@@ -116,12 +120,31 @@ def run_pipeline(
         output_dir=output_dir / "plots",
     )
 
+    # Extract predictions for curve visualizations
+    predictions_dict = {
+        name: info["predictions"]
+        for name, info in results.items()
+        if info["status"] == "success" and info["predictions"] is not None
+    }
+
+    # Create PR curve and Lift/Gain charts
+    pr_curve_path = create_pr_curve(
+        predictions_dict,
+        output_dir=output_dir / "plots",
+    )
+    lift_gain_path = create_lift_gain_chart(
+        predictions_dict,
+        output_dir=output_dir / "plots",
+    )
+
     # Select best model
     best_name, best_info = select_best_model(results, primary_metric)
 
     # Log comparison artifacts to MLflow
     with mlflow.start_run(run_name="pipeline_comparison"):
         mlflow.log_artifact(str(chart_path), artifact_path="comparison")
+        mlflow.log_artifact(str(pr_curve_path), artifact_path="comparison")
+        mlflow.log_artifact(str(lift_gain_path), artifact_path="comparison")
         mlflow.log_param("best_model", best_name)
         mlflow.log_param("primary_metric", primary_metric)
         mlflow.log_metrics({f"best_{k}": v for k, v in best_info["metrics"].items()})
@@ -141,6 +164,8 @@ def run_pipeline(
         "best_model": best_name,
         "best_metrics": best_info["metrics"],
         "chart_path": chart_path,
+        "pr_curve_path": pr_curve_path,
+        "lift_gain_path": lift_gain_path,
     }
 
 
@@ -160,9 +185,9 @@ def main():
     parser.add_argument(
         "--primary-metric",
         type=str,
-        default="recall",
-        choices=["accuracy", "precision", "recall", "f1", "roc_auc"],
-        help="Primary metric for model selection (default: recall)",
+        default="pr_auc",
+        choices=["accuracy", "precision", "recall", "f1", "roc_auc", "pr_auc"],
+        help="Primary metric for model selection (default: pr_auc)",
     )
     parser.add_argument(
         "--register",
@@ -204,7 +229,9 @@ def main():
     print(
         f"Best {args.primary_metric}: {result['best_metrics'][args.primary_metric]:.4f}"
     )
-    print(f"Chart saved to: {result['chart_path']}")
+    print(f"Comparison chart: {result['chart_path']}")
+    print(f"PR curve: {result['pr_curve_path']}")
+    print(f"Lift/Gain chart: {result['lift_gain_path']}")
     print("=" * 60)
 
 

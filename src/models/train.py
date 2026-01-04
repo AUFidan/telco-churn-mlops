@@ -12,6 +12,7 @@ from sklearn.linear_model import LogisticRegression
 from xgboost import XGBClassifier
 from sklearn.metrics import (
     accuracy_score,
+    average_precision_score,
     f1_score,
     precision_score,
     recall_score,
@@ -43,6 +44,7 @@ def evaluate_model(model, X_test, y_test) -> dict:
         "recall": recall_score(y_test, y_pred),
         "f1": f1_score(y_test, y_pred),
         "roc_auc": roc_auc_score(y_test, y_prob),
+        "pr_auc": average_precision_score(y_test, y_prob),
     }
 
 
@@ -299,7 +301,12 @@ def register_model(
 
 
 def run_training(model_name: str = "logistic_regression", register: bool = False):
-    """Run full training pipeline for a model."""
+    """Run full training pipeline for a model.
+
+    Returns:
+        Tuple of (model, metrics, run_id, predictions) where predictions is
+        (y_test, y_prob) for visualization purposes.
+    """
     config = load_config()
 
     # Setup MLflow
@@ -372,7 +379,11 @@ def run_training(model_name: str = "logistic_regression", register: bool = False
         registry_name = f"telco-churn-{model_name}"
         register_model(run_id=run_id, model_name=registry_name, alias="staging")
 
-    return model, metrics, run_id
+    # Get predictions for visualization
+    y_prob = model.predict_proba(X_test)[:, 1]
+    predictions = (y_test.values, y_prob)
+
+    return model, metrics, run_id, predictions
 
 
 if __name__ == "__main__":
