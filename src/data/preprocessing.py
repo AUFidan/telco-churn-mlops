@@ -42,7 +42,13 @@ def encode_features(df: pd.DataFrame) -> tuple[pd.DataFrame, dict]:
     df = df.copy()
 
     # Binary columns to encode as 0/1
-    binary_cols = ["gender", "Partner", "Dependents", "PhoneService", "PaperlessBilling"]
+    binary_cols = [
+        "gender",
+        "Partner",
+        "Dependents",
+        "PhoneService",
+        "PaperlessBilling",
+    ]
 
     # Multi-class columns to encode
     multi_cols = [

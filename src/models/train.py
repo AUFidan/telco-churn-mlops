@@ -1,15 +1,13 @@
 """Training script with MLflow tracking and Optuna hyperparameter tuning."""
 
-from pathlib import Path
-
 import mlflow
-from mlflow.tracking import MlflowClient
 import optuna
 import yaml
 from catboost import CatBoostClassifier
 from lightgbm import LGBMClassifier
+from mlflow.tracking import MlflowClient
+from sklearn.ensemble import StackingClassifier
 from sklearn.linear_model import LogisticRegression
-from xgboost import XGBClassifier
 from sklearn.metrics import (
     accuracy_score,
     average_precision_score,
@@ -18,8 +16,8 @@ from sklearn.metrics import (
     recall_score,
     roc_auc_score,
 )
-from sklearn.ensemble import StackingClassifier
 from sklearn.model_selection import cross_val_score
+from xgboost import XGBClassifier
 
 from src.data.preprocessing import preprocess_pipeline
 from src.utils.logger import get_logger
@@ -140,7 +138,9 @@ def train_model(
     )
 
     # Optimize
-    study.optimize(objective, n_trials=optuna_config["n_trials"], show_progress_bar=True)
+    study.optimize(
+        objective, n_trials=optuna_config["n_trials"], show_progress_bar=True
+    )
 
     logger.info(f"Best trial: {study.best_trial.value:.4f}")
     logger.info(f"Best params: {study.best_trial.params}")

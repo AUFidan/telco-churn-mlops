@@ -1,7 +1,6 @@
 """Tests for data preprocessing module."""
 
 import pandas as pd
-import pytest
 
 from src.data.preprocessing import (
     clean_data,
@@ -94,9 +93,7 @@ class TestScaleFeatures:
 class TestSplitData:
     """Tests for split_data function."""
 
-    def test_split_data_returns_correct_shapes(
-        self, sample_cleaned_data: pd.DataFrame
-    ):
+    def test_split_data_returns_correct_shapes(self, sample_cleaned_data: pd.DataFrame):
         """Test that split maintains correct proportions."""
         df, _ = encode_features(sample_cleaned_data)
         X_train, X_test, y_train, y_test = split_data(df, test_size=0.33)

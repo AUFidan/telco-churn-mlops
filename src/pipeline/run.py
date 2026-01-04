@@ -9,10 +9,10 @@ import mlflow
 from src.models.train import load_config, register_model, run_training
 from src.pipeline.comparison import select_best_model
 from src.pipeline.visualization import (
+    create_lift_gain_chart,
     create_metric_table,
     create_metrics_comparison_chart,
     create_pr_curve,
-    create_lift_gain_chart,
 )
 from src.utils.logger import get_logger
 

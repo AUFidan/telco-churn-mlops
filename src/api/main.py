@@ -54,27 +54,31 @@ class CustomerFeatures(BaseModel):
     MonthlyCharges: float
     TotalCharges: float
 
-    model_config = {"json_schema_extra": {"example": {
-        "gender": 1,
-        "SeniorCitizen": 0,
-        "Partner": 1,
-        "Dependents": 0,
-        "tenure": 0.5,
-        "PhoneService": 1,
-        "MultipleLines": 0,
-        "InternetService": 1,
-        "OnlineSecurity": 0,
-        "OnlineBackup": 0,
-        "DeviceProtection": 0,
-        "TechSupport": 0,
-        "StreamingTV": 0,
-        "StreamingMovies": 0,
-        "Contract": 0,
-        "PaperlessBilling": 1,
-        "PaymentMethod": 2,
-        "MonthlyCharges": 0.2,
-        "TotalCharges": 0.15,
-    }}}
+    model_config = {
+        "json_schema_extra": {
+            "example": {
+                "gender": 1,
+                "SeniorCitizen": 0,
+                "Partner": 1,
+                "Dependents": 0,
+                "tenure": 0.5,
+                "PhoneService": 1,
+                "MultipleLines": 0,
+                "InternetService": 1,
+                "OnlineSecurity": 0,
+                "OnlineBackup": 0,
+                "DeviceProtection": 0,
+                "TechSupport": 0,
+                "StreamingTV": 0,
+                "StreamingMovies": 0,
+                "Contract": 0,
+                "PaperlessBilling": 1,
+                "PaymentMethod": 2,
+                "MonthlyCharges": 0.2,
+                "TotalCharges": 0.15,
+            }
+        }
+    }
 
 
 class PredictionResponse(BaseModel):

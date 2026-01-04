@@ -49,6 +49,13 @@ htmlcov/
 mlruns/
 mlartifacts/
 
+# Training artifacts
+artifacts/
+catboost_info/
+
+# Coverage
+coverage.xml
+
 # DVC
 /data/raw/*.csv
 /data/processed/*.csv

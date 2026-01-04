@@ -4,7 +4,7 @@ from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
-from sklearn.metrics import precision_recall_curve, average_precision_score
+from sklearn.metrics import average_precision_score, precision_recall_curve
 
 from src.utils.logger import get_logger
 
@@ -139,7 +139,9 @@ def create_pr_curve(
     baseline = sum(model_predictions[list(model_predictions.keys())[0]][0]) / len(
         model_predictions[list(model_predictions.keys())[0]][0]
     )
-    ax.axhline(y=baseline, color="gray", linestyle="--", label=f"Baseline ({baseline:.3f})")
+    ax.axhline(
+        y=baseline, color="gray", linestyle="--", label=f"Baseline ({baseline:.3f})"
+    )
 
     ax.set_xlabel("Recall", fontsize=12)
     ax.set_ylabel("Precision", fontsize=12)
